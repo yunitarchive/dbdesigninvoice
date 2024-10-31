@@ -123,3 +123,69 @@ ALTER TABLE "order_coupons" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("o
 ALTER TABLE "order_coupons" ADD FOREIGN KEY ("coupon_id") REFERENCES "coupons" ("coupon_id");
 
 ALTER TABLE "addresses" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("user_id");
+
+
+CREATE TABLE "invoice_details" (
+    "invoice_detail_id" SERIAL PRIMARY KEY,
+    "invoice_id" integer NOT NULL,
+    "buyer_name" varchar,
+    "seller_name" varchar,
+    "product_name" varchar,
+    "coupon_code" varchar,
+    "courier_name" varchar,
+    "payment_method" varchar,
+    "total_amount" decimal,
+    "invoice_date" timestamp,
+    "due_date" timestamp,
+    "status" varchar,
+    
+    FOREIGN KEY ("invoice_id") REFERENCES "invoices" ("invoice_id")
+);
+
+INSERT INTO invoice_details (
+    invoice_id,
+    buyer_name,
+    seller_name,
+    product_name,
+    coupon_code,
+    courier_name,
+    payment_method,
+    total_amount,
+    invoice_date,
+    due_date,
+    status
+)
+SELECT
+    i.invoice_id,
+    u.username AS buyer_name,
+    s.store_name AS seller_name,
+    p.name AS product_name,
+    c.code AS coupon_code,
+    cr.courier_name AS courier_name,
+    pm.method_name AS payment_method,
+    i.total_amount,
+    i.invoice_date,
+    i.due_date,
+    i.status
+FROM
+    invoices i
+JOIN
+    orders o ON i.order_id = o.order_id
+JOIN
+    users u ON o.user_id = u.user_id
+JOIN
+    order_items oi ON o.order_id = oi.order_id
+JOIN
+    products p ON oi.product_id = p.product_id
+JOIN
+    sellers s ON p.seller_id = s.seller_id
+LEFT JOIN
+    order_coupons oc ON o.order_id = oc.order_id
+LEFT JOIN
+    coupons c ON oc.coupon_id = c.coupon_id
+LEFT JOIN
+    couriers cr ON o.courier_id = cr.courier_id
+LEFT JOIN
+    payments pay ON o.order_id = pay.order_id
+LEFT JOIN
+    payment_methods pm ON pay.payment_method_id = pm.payment_method_id;
